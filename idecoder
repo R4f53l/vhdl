@@ -1,0 +1,59 @@
+library IEEE;
+use IEEE.std_logic_1164.all;
+
+-- Como dito, as portas sao sao os que entram ou os que saem do bloco
+
+entity idecoder is 
+	port (
+    	clk_i: in std_logic; 
+        rst_i: in std_logic; 
+        regwrite: in std_logic; 
+        instr: in std_logic_vector (31 downto 0); 
+        immsrc: in std_logic_vector (1 downto 0); 
+        wd: in std_logic_vector (31 downto 0); 
+        immext: out std_logic_vector (31 downto 0); 
+        rd1: out std_logic_vector (31 downto 0); 
+        rd2: out std_logic_vector (31 downto 0);         
+        op: out std_logic_vector (6 downto 0); 
+        funct3: out std_logic_vector (2 downto 0); 
+        funct7: out std_logic_vector (6 downto 0)
+    );
+end entity idecoder;
+
+-- Já os sinais são os fios que existem apenas dentro do bloco (teoricamente), se voce olhar tudo que é sinal tem um nomezinho em cima do fio. 
+
+architecture behavior of idecoder is 
+	signal rs1_s, rs2_s, rd_s: std_logic_vector(4 downto 0); 
+    signal imm_s: std_logic_vector (24 downto 0); 
+    
+    -- Bom, o que nosso idecoder faz eh decodificar a instrucao: 
+    --Depois da declaracao do signal, tem o begin.
+    begin 
+    	op <= instr(6 downto 0); 
+    	funct3 <= instr(14 downto 12); 
+    	funct7 <= instr(31 downto 25); 
+    	rs1_s <= instr(19 downto 15); 
+    	rs2_s <= instr(24 downto 20); 
+    	rd_s<= instr(11 downto 7); 
+    	imm_s <= instr(31 downto 7); 
+    
+    	ext: entity work.extend 
+    		port map (
+        		imm => imm_s, 
+            	immSrc => immsrc,
+            	immExt => immext
+        	);
+   		reg: entity work.registers
+    		port map (
+        		clk_i => clk_i,
+        		rst_i => rst_i, 
+        		a1 => rs1_s, --RS1
+        		a2 => rs2_s,  --RS2
+        		we => regwrite, -- when 1 write wd in RD
+        		a3 => rd_s, -- RD
+        		wd => wd,
+        		rd1 => rd1, --read data 1
+        		rd2 => rd2 --read data 2        
+        	);
+        
+end architecture behavior; 
