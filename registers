@@ -1,0 +1,40 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity registers is 	
+    port (
+    	clk_i: in std_logic; 
+        rst_i: in std_logic; 
+        a1: in std_logic_vector (4 downto 0); --RS1
+        a2: in std_logic_vector (4 downto 0); --RS2
+        we: in std_logic; -- when 1 write wd in RD
+        a3: in std_logic_vector (4 downto 0); -- RD
+        wd: in std_logic_vector(31 downto 0); --write data
+        rd1: out std_logic_vector (31 downto 0); --read data 1
+        rd2: out std_logic_vector (31 downto 0) --read data 2    
+    );
+end entity registers;
+
+
+architecture behavior of registers is 
+	--Eh um banco de registradores, entao precisamos guardar todos 
+    type bank is array(31 downto 0) of std_logic_vector(31 downto 0); 
+    signal bank_of_registers: bank := (others => (others =>'0')); -- o others funciona como um ponteiro p ponteiro, eh interessante comecar com todos igual a 0
+begin 
+	process(clk_i, rst_i) --Sensivel ao clock e ao reset 
+		begin 
+			if rst_i = '1' then 
+    			bank_of_registers <= (others => (others => '0')); -- Se rst = 1, entao os registradores serao resetados
+    		elsif rising_edge(clk_i) then
+    			if we = '1' and a3 /= "00000" then -- Toda vez na subida do clock, se we = 1, entao escreverei wd em rd(posicao).
+        		bank_of_registers(to_integer(unsigned(a3))) <= wd;
+         		end if; 
+    		end if; 
+	end process;         
+
+	--Vale lembrar que rs1, rs2, rd sao endereços. rs1 e rs2 endereços de entrada. Ou seja, no output tem-se
+    rd1 <= (others => '0') when a1 = "00000" else bank_of_registers(to_integer(unsigned(a1)));
+    rd2 <= (others => '0') when a2 = "00000" else bank_of_registers(to_integer(unsigned(a2)));
+ 
+end architecture behavior; 
