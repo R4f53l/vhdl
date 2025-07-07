@@ -1,0 +1,48 @@
+library ieee;
+use IEEE.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity alu is
+    port (
+        a_i: in std_logic_vector (31 downto 0); --operando 1
+        b_i: in std_logic_vector (31 downto 0); --operando 2
+        alucontrol_i: in std_logic_vector (2 downto 0); --operacao a ser feita
+        result_o: out std_logic_vector (31 downto 0); --saida
+        zero_o: out std_logic --se saida == 0, zero = 1. Senao, zero = 0.
+    );
+end entity alu;
+
+architecture behavior of alu is
+    signal res_s: std_logic_vector (31 downto 0);
+    --A Alu eh a unidade logica e aritmetica. O resultado dessas operacoes deverá sair na porta result_o.
+    --Portanto, usamos res_s como intermediário p armazenar o resultado
+begin
+    process(a_i, b_i, alucontrol_i) --Caso haja variacao em um desses tres
+    begin
+        case alucontrol_i is
+            when "000" => --Se for 000, eh um ADD.
+                res_s <= std_logic_vector(unsigned(a_i) + unsigned(b_i));
+            when "001" => --Se for 001, eh uma SUB.
+                res_s <= std_logic_vector(unsigned(a_i) - unsigned(b_i));
+            when "010" => --Se for 010, eh um and
+                res_s <= a_i and b_i;
+            when "011" => --Se for 011, eh um or
+                res_s <= a_i or b_i;
+            when "100" => --Se for um 100, eh um xor
+                res_s <= a_i xor b_i;
+            when "101" => --Se for 101, eh um slt
+                if signed(a_i) < signed(b_i) then
+                    res_s <= x"00000001";
+                else
+                    res_s <= x"00000000";
+                end if;
+            when others =>
+                res_s <= (others => 'X');
+        end case;
+    end process;
+
+    result_o <= res_s;
+
+    zero_o <= '1' when unsigned(res_s) = 0 else '0';
+
+end architecture behavior;
