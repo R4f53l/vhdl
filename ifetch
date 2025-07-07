@@ -1,0 +1,64 @@
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity ifetch is    
+    port (
+        -- Portas são sinais que entram no modulo e que saem do modulo.
+        -- Analisando o diagrama, eh possivel notar que pc sai.
+        -- A instrucao (instr) vem da ROM externa (nao passa por esta entidade).
+        clk_i       : in  std_logic;    
+        rst_i       : in  std_logic;    
+        pcsrc_i     : in  std_logic;    
+        imm         : in  std_logic_vector(31 downto 0);      
+                                         
+        pccurrent_o : out std_logic_vector(31 downto 0);    
+        pc_plus_4_o : out std_logic_vector(31 downto 0) -- nao tem virgula na ultima
+    );
+end entity ifetch; 
+
+architecture behavior of ifetch is    
+    -- Declaracao dos sinais internos (sao internos ao modulo)
+    signal pc_next_mux_s    : std_logic_vector(31 downto 0);    
+    signal pc_current_s     : std_logic_vector (31 downto 0);    
+    signal pc_plus_4_s      : std_logic_vector (31 downto 0);    
+    signal pc_target_s      : std_logic_vector (31 downto 0);    
+    signal constant_4_s     : std_logic_vector (31 downto 0) := x"00000004"; --nao tem os dois pontos 
+    
+    begin
+        -- Agora eh fazer as ligacoes (instanciação dos componentes):
+        -- pra fazer as conexoes, "NOME_INSTANCIA: entity work.nomedaentidadeaserconectada"
+        MUX: entity work.mux232
+            port map(
+                d0 => pc_plus_4_s,    
+                d1 => pc_target_s,
+                s  => pcsrc_i,    
+                y  => pc_next_mux_s
+            );
+
+        PCPLUS4: entity work.adder32
+            port map (
+                a => pc_current_s,    
+                b => constant_4_s,    
+                s => pc_plus_4_s
+            );
+
+        PCTARGET: entity work.adder32
+            port map (
+                a => pc_current_s,    
+                b => imm,
+                s => pc_target_s
+            );
+
+        PC: entity work.rreg32    
+            port map(
+                clk => clk_i,    
+                rst => rst_i,
+                d   => pc_next_mux_s,
+                q   => pc_current_s              
+            );    
+                
+        -- Atribuir os sinais internos as portas de saida da entidade
+        pccurrent_o <= pc_current_s; 
+        pc_plus_4_o <= pc_plus_4_s;    
+            
+end architecture behavior; -- fim do comportamento
